@@ -1,0 +1,51 @@
+name: Build VST3
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+          - name: Windows
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: cmake-deps-${{ matrix.os }}-juce-7.0.9
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload macOS
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Velvete-macOS
+          path: |
+            build/Velvete_artefacts/Release/VST3/
+            build/Velvete_artefacts/Release/Standalone/
+          if-no-files-found: warn
+
+      - name: Upload Windows
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Velvete-Windows
+          path: build\\Velvete_artefacts\\Release\\VST3\\
+          if-no-files-found: warn
